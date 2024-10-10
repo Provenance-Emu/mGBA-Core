@@ -31,6 +31,7 @@ static void GBAVideoDummyRendererGetPixels(struct GBAVideoRenderer* renderer, si
 static void GBAVideoDummyRendererPutPixels(struct GBAVideoRenderer* renderer, size_t stride, const void* pixels);
 
 static void _startHblank(struct mTiming*, void* context, uint32_t cyclesLate);
+static void _midHblank(struct mTiming*, void* context, uint32_t cyclesLate);
 static void _startHdraw(struct mTiming*, void* context, uint32_t cyclesLate);
 
 MGBA_EXPORT const int GBAVideoObjSizes[16][2] = {
@@ -69,7 +70,7 @@ void GBAVideoReset(struct GBAVideo* video) {
 	} else {
 		// TODO: Verify exact scanline on hardware
 		video->vcount = 0x7E;
-		nextEvent = 117;
+		nextEvent = 170;
 	}
 	video->p->memory.io[REG_VCOUNT >> 1] = video->vcount;
 
@@ -137,6 +138,15 @@ void GBAVideoAssociateRenderer(struct GBAVideo* video, struct GBAVideoRenderer* 
 	}
 }
 
+void _midHblank(struct mTiming* timing, void* context, uint32_t cyclesLate) {
+	struct GBAVideo* video = context;
+	GBARegisterDISPSTAT dispstat = video->p->memory.io[REG_DISPSTAT >> 1];
+	dispstat = GBARegisterDISPSTATClearInHblank(dispstat);
+	video->p->memory.io[REG_DISPSTAT >> 1] = dispstat;
+	video->event.callback = _startHdraw;
+	mTimingSchedule(timing, &video->event, VIDEO_HBLANK_FLIP - cyclesLate);
+}
+
 void _startHdraw(struct mTiming* timing, void* context, uint32_t cyclesLate) {
 	struct GBAVideo* video = context;
 	video->event.callback = _startHblank;
@@ -153,11 +163,10 @@ void _startHdraw(struct mTiming* timing, void* context, uint32_t cyclesLate) {
 	}
 
 	GBARegisterDISPSTAT dispstat = video->p->memory.io[REG_DISPSTAT >> 1];
-	dispstat = GBARegisterDISPSTATClearInHblank(dispstat);
 	if (video->vcount == GBARegisterDISPSTATGetVcountSetting(dispstat)) {
 		dispstat = GBARegisterDISPSTATFillVcounter(dispstat);
 		if (GBARegisterDISPSTATIsVcounterIRQ(dispstat)) {
-			GBARaiseIRQ(video->p, GBA_IRQ_VCOUNTER, cyclesLate);
+			GBARaiseIRQ(video->p, IRQ_VCOUNTER, cyclesLate);
 		}
 	} else {
 		dispstat = GBARegisterDISPSTATClearVcounter(dispstat);
@@ -176,7 +185,7 @@ void _startHdraw(struct mTiming* timing, void* context, uint32_t cyclesLate) {
 		}
 		GBADMARunVblank(video->p, -cyclesLate);
 		if (GBARegisterDISPSTATIsVblankIRQ(dispstat)) {
-			GBARaiseIRQ(video->p, GBA_IRQ_VBLANK, cyclesLate);
+			GBARaiseIRQ(video->p, IRQ_VBLANK, cyclesLate);
 		}
 		GBAFrameEnded(video->p);
 		mCoreSyncPostFrame(video->p->sync);
@@ -195,8 +204,8 @@ void _startHdraw(struct mTiming* timing, void* context, uint32_t cyclesLate) {
 
 void _startHblank(struct mTiming* timing, void* context, uint32_t cyclesLate) {
 	struct GBAVideo* video = context;
-	video->event.callback = _startHdraw;
-	mTimingSchedule(timing, &video->event, VIDEO_HBLANK_LENGTH - cyclesLate);
+	video->event.callback = _midHblank;
+	mTimingSchedule(timing, &video->event, VIDEO_HBLANK_LENGTH - VIDEO_HBLANK_FLIP - cyclesLate);
 
 	// Begin Hblank
 	GBARegisterDISPSTAT dispstat = video->p->memory.io[REG_DISPSTAT >> 1];
@@ -212,7 +221,7 @@ void _startHblank(struct mTiming* timing, void* context, uint32_t cyclesLate) {
 		GBADMARunDisplayStart(video->p, -cyclesLate);
 	}
 	if (GBARegisterDISPSTATIsHblankIRQ(dispstat)) {
-		GBARaiseIRQ(video->p, GBA_IRQ_HBLANK, cyclesLate - 6); // TODO: Where does this fudge factor come from?
+		GBARaiseIRQ(video->p, IRQ_HBLANK, cyclesLate);
 	}
 	video->shouldStall = 0;
 	video->p->memory.io[REG_DISPSTAT >> 1] = dispstat;
@@ -334,6 +343,8 @@ void GBAVideoSerialize(const struct GBAVideo* video, struct GBASerializedState* 
 		flags = GBASerializedVideoFlagsSetMode(flags, 1);
 	} else if (video->event.callback == _startHblank) {
 		flags = GBASerializedVideoFlagsSetMode(flags, 2);
+	} else if (video->event.callback == _midHblank) {
+		flags = GBASerializedVideoFlagsSetMode(flags, 3);
 	}
 	STORE_32(flags, 0, &state->video.flags);
 	STORE_32(video->frameCounter, 0, &state->video.frameCounter);
@@ -373,16 +384,11 @@ void GBAVideoDeserialize(struct GBAVideo* video, const struct GBASerializedState
 		video->shouldStall = 1;
 		break;
 	case 3:
-		video->event.callback = _startHdraw;
+		video->event.callback = _midHblank;
 		break;
 	}
 	uint32_t when;
-	if (state->versionMagic < 0x01000007) {
-		// This field was moved in v7
-		LOAD_32(when, 0, &state->audio.lastSample);
-	} else {
-		LOAD_32(when, 0, &state->video.nextEvent);
-	}
+	LOAD_32(when, 0, &state->video.nextEvent);
 	mTimingSchedule(&video->p->timing, &video->event, when);
 
 	LOAD_16(video->vcount, REG_VCOUNT, state->io);

@@ -6,8 +6,7 @@
 #include <mgba/internal/gba/overrides.h>
 
 #include <mgba/internal/gba/gba.h>
-#include <mgba/internal/gba/cart/ereader.h>
-#include <mgba/internal/gba/cart/gpio.h>
+#include <mgba/internal/gba/hardware.h>
 
 #include <mgba-util/configuration.h>
 
@@ -69,9 +68,6 @@ static const struct GBACartridgeOverride _overrides[] = {
 	// Iridion II
 	{ "AI2E", SAVEDATA_FORCE_NONE, HW_NONE, IDLE_LOOP_NONE, false },
 	{ "AI2P", SAVEDATA_FORCE_NONE, HW_NONE, IDLE_LOOP_NONE, false },
-
-	// Game Boy Wars Advance 1+2
-	{ "BGWJ", SAVEDATA_FLASH1M, HW_NONE, IDLE_LOOP_NONE, false },
 
 	// Golden Sun: The Lost Age
 	{ "AGFE", SAVEDATA_FLASH512, HW_NONE, 0x801353A, false },
@@ -229,6 +225,7 @@ bool GBAOverrideFind(const struct Configuration* config, struct GBACartridgeOver
 	if (!found && override->id[0] == 'F') {
 		// Classic NES Series
 		override->savetype = SAVEDATA_EEPROM;
+		override->mirroring = true;
 		found = true;
 	}
 
@@ -243,9 +240,6 @@ bool GBAOverrideFind(const struct Configuration* config, struct GBACartridgeOver
 			if (strcasecmp(savetype, "SRAM") == 0) {
 				found = true;
 				override->savetype = SAVEDATA_SRAM;
-			} else if (strcasecmp(savetype, "SRAM512") == 0) {
-				found = true;
-				override->savetype = SAVEDATA_SRAM512;
 			} else if (strcasecmp(savetype, "EEPROM") == 0) {
 				found = true;
 				override->savetype = SAVEDATA_EEPROM;
@@ -293,9 +287,6 @@ void GBAOverrideSave(struct Configuration* config, const struct GBACartridgeOver
 	case SAVEDATA_SRAM:
 		savetype = "SRAM";
 		break;
-	case SAVEDATA_SRAM512:
-		savetype = "SRAM512";
-		break;
 	case SAVEDATA_EEPROM:
 		savetype = "EEPROM";
 		break;
@@ -341,7 +332,6 @@ void GBAOverrideApply(struct GBA* gba, const struct GBACartridgeOverride* overri
 
 		if (override->hardware & HW_RTC) {
 			GBAHardwareInitRTC(&gba->memory.hw);
-			GBASavedataRTCRead(&gba->memory.savedata);
 		}
 
 		if (override->hardware & HW_GYRO) {
@@ -361,7 +351,7 @@ void GBAOverrideApply(struct GBA* gba, const struct GBACartridgeOverride* overri
 		}
 
 		if (override->hardware & HW_EREADER) {
-			GBACartEReaderInit(&gba->memory.ereader);
+			GBAHardwareInitEReader(&gba->memory.hw);
 		}
 
 		if (override->hardware & HW_GB_PLAYER_DETECTION) {
@@ -376,6 +366,10 @@ void GBAOverrideApply(struct GBA* gba, const struct GBACartridgeOverride* overri
 		if (gba->idleOptimization == IDLE_LOOP_DETECT) {
 			gba->idleOptimization = IDLE_LOOP_REMOVE;
 		}
+	}
+
+	if (override->mirroring) {
+		gba->memory.mirroring = true;
 	}
 }
 

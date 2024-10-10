@@ -137,10 +137,6 @@ bool ConfigurationHasSection(const struct Configuration* configuration, const ch
 	return HashTableLookup(&configuration->sections, section);
 }
 
-void ConfigurationDeleteSection(struct Configuration* configuration, const char* section) {
-	HashTableRemove(&configuration->sections, section);
-}
-
 const char* ConfigurationGetValue(const struct Configuration* configuration, const char* section, const char* key) {
 	const struct Table* currentSection = &configuration->root;
 	if (section) {
@@ -183,7 +179,7 @@ bool ConfigurationWrite(const struct Configuration* configuration, const char* p
 	}
 	bool res = ConfigurationWriteVFile(configuration, vf);
 	vf->close(vf);
-	return res;
+	return true;
 }
 
 bool ConfigurationWriteVFile(const struct Configuration* configuration, struct VFile* vf) {

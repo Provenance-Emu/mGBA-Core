@@ -28,8 +28,6 @@ void ConfigurationSetUIntValue(struct Configuration*, const char* section, const
 void ConfigurationSetFloatValue(struct Configuration*, const char* section, const char* key, float value);
 
 bool ConfigurationHasSection(const struct Configuration*, const char* section);
-void ConfigurationDeleteSection(struct Configuration*, const char* section);
-
 const char* ConfigurationGetValue(const struct Configuration*, const char* section, const char* key);
 
 void ConfigurationClearValue(struct Configuration*, const char* section, const char* key);

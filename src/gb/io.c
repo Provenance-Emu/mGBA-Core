@@ -119,15 +119,19 @@ static void _writeSGBBits(struct GB* gb, int bits) {
 	if (bits == gb->currentSgbBits) {
 		return;
 	}
-	if (bits & 2) {
+	switch (bits) {
+	case 0:
+	case 1:
+		if (gb->currentSgbBits & 2) {
+			gb->sgbIncrement = !gb->sgbIncrement;
+		}
+		break;
+	case 3:
 		if (gb->sgbIncrement) {
 			gb->sgbIncrement = false;
 			gb->sgbCurrentController = (gb->sgbCurrentController + 1) & gb->sgbControllers;
 		}
-	} else {
-		if (gb->currentSgbBits & 2) {
-			gb->sgbIncrement = !gb->sgbIncrement;
-		}
+		break;
 	}
 	gb->currentSgbBits = bits;
 	if (gb->sgbBit == 128 && bits == 2) {
@@ -403,10 +407,9 @@ void GBIOWrite(struct GB* gb, unsigned address, uint8_t value) {
 	case GB_REG_WAVE_D:
 	case GB_REG_WAVE_E:
 	case GB_REG_WAVE_F:
-		GBAudioRun(&gb->audio, mTimingCurrentTime(gb->audio.timing), 0x4);
-		if (!gb->audio.playingCh3) {
+		if (!gb->audio.playingCh3 || gb->audio.style != GB_AUDIO_DMG) {
 			gb->audio.ch3.wavedata8[address - GB_REG_WAVE_0] = value;
-		} else if (gb->audio.ch3.readable || gb->audio.style == GB_AUDIO_CGB) {
+		} else if(gb->audio.ch3.readable) {
 			gb->audio.ch3.wavedata8[gb->audio.ch3.window >> 1] = value;
 		}
 		break;
@@ -507,6 +510,9 @@ void GBIOWrite(struct GB* gb, unsigned address, uint8_t value) {
 				gb->memory.io[GB_REG_BCPD] = gb->video.palette[gb->video.bcpIndex >> 1] >> (8 * (gb->video.bcpIndex & 1));
 				break;
 			case GB_REG_BCPD:
+				if (gb->video.mode != 3) {
+					GBVideoProcessDots(&gb->video, 0);
+				}
 				GBVideoWritePalette(&gb->video, address, value);
 				return;
 			case GB_REG_OCPS:
@@ -515,6 +521,9 @@ void GBIOWrite(struct GB* gb, unsigned address, uint8_t value) {
 				gb->memory.io[GB_REG_OCPD] = gb->video.palette[8 * 4 + (gb->video.ocpIndex >> 1)] >> (8 * (gb->video.ocpIndex & 1));
 				break;
 			case GB_REG_OCPD:
+				if (gb->video.mode != 3) {
+					GBVideoProcessDots(&gb->video, 0);
+				}
 				GBVideoWritePalette(&gb->video, address, value);
 				return;
 			case GB_REG_SVBK:
@@ -608,8 +617,7 @@ uint8_t GBIORead(struct GB* gb, unsigned address) {
 	case GB_REG_WAVE_E:
 	case GB_REG_WAVE_F:
 		if (gb->audio.playingCh3) {
-			GBAudioRun(&gb->audio, mTimingCurrentTime(gb->audio.timing), 0x4);
-			if (gb->audio.ch3.readable || gb->audio.style == GB_AUDIO_CGB) {
+			if (gb->audio.ch3.readable || gb->audio.style != GB_AUDIO_DMG) {
 				return gb->audio.ch3.wavedata8[gb->audio.ch3.window >> 1];
 			} else {
 				return 0xFF;
@@ -622,7 +630,6 @@ uint8_t GBIORead(struct GB* gb, unsigned address) {
 		if (gb->model < GB_MODEL_CGB) {
 			mLOG(GB_IO, GAME_ERROR, "Reading from CGB register FF%02X in DMG mode", address);
 		} else if (gb->audio.enable) {
-			GBAudioRun(&gb->audio, mTimingCurrentTime(gb->audio.timing), 0x3);
 			return (gb->audio.ch1.sample) | (gb->audio.ch2.sample << 4);
 		}
 		break;
@@ -630,7 +637,7 @@ uint8_t GBIORead(struct GB* gb, unsigned address) {
 		if (gb->model < GB_MODEL_CGB) {
 			mLOG(GB_IO, GAME_ERROR, "Reading from CGB register FF%02X in DMG mode", address);
 		} else if (gb->audio.enable) {
-			GBAudioRun(&gb->audio, mTimingCurrentTime(gb->audio.timing), 0xC);
+			GBAudioUpdateChannel4(&gb->audio);
 			return (gb->audio.ch3.sample) | (gb->audio.ch4.sample << 4);
 		}
 		break;
@@ -684,8 +691,8 @@ uint8_t GBIORead(struct GB* gb, unsigned address) {
 	case GB_REG_OCPS:
 	case GB_REG_OCPD:
 	case GB_REG_SVBK:
-	case GB_REG_PSWX:
-	case GB_REG_PSWY:
+	case GB_REG_UNK72:
+	case GB_REG_UNK73:
 	case GB_REG_UNK75:
 		// Handled transparently by the registers
 		if (gb->model < GB_MODEL_CGB) {

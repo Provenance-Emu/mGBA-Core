@@ -24,18 +24,11 @@ enum GDBStubAckState {
 	GDB_ACK_OFF
 };
 
-enum GDBWatchpointsBehvaior {
-	GDB_WATCHPOINT_STANDARD_LOGIC = 0,
-	GDB_WATCHPOINT_OVERRIDE_LOGIC,
-	GDB_WATCHPOINT_OVERRIDE_LOGIC_ANY_WRITE,
-};
-
 struct GDBStub {
 	struct mDebugger d;
 
 	char line[GDB_STUB_MAX_LINE];
 	char outgoing[GDB_STUB_MAX_LINE];
-	char memoryMapXml[GDB_STUB_MAX_LINE];
 	enum GDBStubAckState lineAck;
 
 	Socket socket;
@@ -46,12 +39,10 @@ struct GDBStub {
 
 	bool supportsSwbreak;
 	bool supportsHwbreak;
-
-	enum GDBWatchpointsBehvaior watchpointsBehavior;
 };
 
 void GDBStubCreate(struct GDBStub*);
-bool GDBStubListen(struct GDBStub*, int port, const struct Address* bindAddress, enum GDBWatchpointsBehvaior watchpointsBehavior);
+bool GDBStubListen(struct GDBStub*, int port, const struct Address* bindAddress);
 
 void GDBStubHangup(struct GDBStub*);
 void GDBStubShutdown(struct GDBStub*);

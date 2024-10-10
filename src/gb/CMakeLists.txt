@@ -30,7 +30,6 @@ set(DEBUGGER_FILES
 
 set(TEST_FILES
 	test/core.c
-	test/gbx.c
 	test/mbc.c
 	test/memory.c
 	test/rtc.c)

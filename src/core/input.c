@@ -578,10 +578,10 @@ void mInputUnbindAllHats(struct mInputMap* map, uint32_t type) {
 	}
 }
 
-bool mInputMapLoad(struct mInputMap* map, uint32_t type, const struct Configuration* config) {
+void mInputMapLoad(struct mInputMap* map, uint32_t type, const struct Configuration* config) {
 	char sectionName[SECTION_NAME_MAX];
 	_makeSectionName(map->info->platformName, sectionName, SECTION_NAME_MAX, type);
-	return _loadAll(map, type, sectionName, config);
+	_loadAll(map, type, sectionName, config);
 }
 
 void mInputMapSave(const struct mInputMap* map, uint32_t type, struct Configuration* config) {

@@ -14,11 +14,10 @@ CXX_GUARD_START
 
 #include <mgba/internal/arm/arm.h>
 #include <mgba/internal/gba/dma.h>
+#include <mgba/internal/gba/hardware.h>
 #include <mgba/internal/gba/savedata.h>
-#include <mgba/internal/gba/cart/ereader.h>
-#include <mgba/internal/gba/cart/gpio.h>
-#include <mgba/internal/gba/cart/matrix.h>
-#include <mgba/internal/gba/cart/vfame.h>
+#include <mgba/internal/gba/vfame.h>
+#include <mgba/internal/gba/matrix.h>
 
 enum GBAMemoryRegion {
 	REGION_BIOS = 0x0,
@@ -68,7 +67,6 @@ enum {
 	SIZE_CART1 = 0x02000000,
 	SIZE_CART2 = 0x02000000,
 	SIZE_CART_SRAM = 0x00008000,
-	SIZE_CART_SRAM512 = 0x00010000,
 	SIZE_CART_FLASH512 = 0x00010000,
 	SIZE_CART_FLASH1M = 0x00020000,
 	SIZE_CART_EEPROM = 0x00002000,
@@ -110,7 +108,6 @@ struct GBAMemory {
 	struct GBASavedata savedata;
 	struct GBAVFameCart vfame;
 	struct GBAMatrix matrix;
-	struct GBACartEReader ereader;
 	size_t romSize;
 	uint32_t romMask;
 	uint16_t romID;
@@ -172,7 +169,6 @@ uint32_t GBAStoreMultiple(struct ARMCore*, uint32_t baseAddress, int mask, enum 
                           int* cycleCounter);
 
 void GBAAdjustWaitstates(struct GBA* gba, uint16_t parameters);
-void GBAAdjustEWRAMWaitstates(struct GBA* gba, uint16_t parameters);
 
 struct GBASerializedState;
 void GBAMemorySerialize(const struct GBAMemory* memory, struct GBASerializedState* state);

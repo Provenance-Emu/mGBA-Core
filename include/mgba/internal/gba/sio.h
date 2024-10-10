@@ -10,9 +10,8 @@
 
 CXX_GUARD_START
 
-#include <mgba/core/log.h>
 #include <mgba/gba/interface.h>
-#include <mgba/internal/gba/sio/gbp.h>
+#include <mgba/core/log.h>
 
 #define MAX_GBAS 4
 
@@ -21,7 +20,7 @@ extern const int GBASIOCyclesPerTransfer[4][MAX_GBAS];
 mLOG_DECLARE_CATEGORY(GBA_SIO);
 
 enum {
-	RCNT_INITIAL = -0x8000
+	RCNT_INITIAL = 0x8000
 };
 
 enum {
@@ -70,8 +69,6 @@ struct GBASIO {
 
 	uint16_t rcnt;
 	uint16_t siocnt;
-
-	struct GBASIOPlayer gbp;
 };
 
 void GBASIOInit(struct GBASIO* sio);

@@ -29,7 +29,7 @@
 #include <psp2/io/stat.h>
 #endif
 
-#ifdef __3DS__
+#ifdef _3DS
 #include <mgba-util/platform/3ds/3ds-vfs.h>
 #endif
 
@@ -86,20 +86,6 @@ static bool _lookupCharValue(const struct mCoreConfig* config, const char* key, 
 		free(*out);
 	}
 	*out = strdup(value);
-	return true;
-}
-
-static bool _lookupBoolValue(const struct mCoreConfig* config, const char* key, bool* out) {
-	const char* charValue = _lookupValue(config, key);
-	if (!charValue) {
-		return false;
-	}
-	char* end;
-	long value = strtol(charValue, &end, 10);
-	if (*end) {
-		return false;
-	}
-	*out = value;
 	return true;
 }
 
@@ -242,7 +228,7 @@ void mCoreConfigDirectory(char* out, size_t outLength) {
 	CreateDirectoryW(wpath, NULL);
 	if (PATH_SEP[0] != '\\') {
 		WCHAR* pathSep;
-		for (pathSep = wpath; (pathSep = wcschr(pathSep, L'\\'));) {
+		for (pathSep = wpath; pathSep = wcschr(pathSep, L'\\');) {
 			pathSep[0] = PATH_SEP[0];
 		}
 	}
@@ -253,7 +239,7 @@ void mCoreConfigDirectory(char* out, size_t outLength) {
 #elif defined(GEKKO) || defined(__SWITCH__)
 	snprintf(out, outLength, "/%s", projectName);
 	mkdir(out, 0777);
-#elif defined(__3DS__)
+#elif defined(_3DS)
 	snprintf(out, outLength, "/%s", projectName);
 	FSUSER_CreateDirectory(sdmcArchive, fsMakePath(PATH_ASCII, out), 0);
 #elif defined(__HAIKU__)
@@ -284,13 +270,13 @@ void mCoreConfigPortablePath(char* out, size_t outLength) {
 	PathRemoveFileSpecW(wpath);
 	if (PATH_SEP[0] != '\\') {
 		WCHAR* pathSep;
-		for (pathSep = wpath; (pathSep = wcschr(pathSep, L'\\'));) {
+		for (pathSep = wpath; pathSep = wcschr(pathSep, L'\\');) {
 			pathSep[0] = PATH_SEP[0];
 		}
 	}
 	WideCharToMultiByte(CP_UTF8, 0, wpath, -1, out, outLength, 0, 0);
 	StringCchCatA(out, outLength, PATH_SEP "portable.ini");
-#elif defined(PSP2) || defined(GEKKO) || defined(__SWITCH__) || defined(__3DS__)
+#elif defined(PSP2) || defined(GEKKO) || defined(__SWITCH__) || defined(_3DS)
 	out[0] = '\0';
 #else
 	getcwd(out, outLength);
@@ -326,10 +312,6 @@ bool mCoreConfigIsPortable(void) {
 
 const char* mCoreConfigGetValue(const struct mCoreConfig* config, const char* key) {
 	return _lookupValue(config, key);
-}
-
-bool mCoreConfigGetBoolValue(const struct mCoreConfig* config, const char* key, bool* value) {
-	return _lookupBoolValue(config, key, value);
 }
 
 bool mCoreConfigGetIntValue(const struct mCoreConfig* config, const char* key, int* value) {
@@ -414,20 +396,40 @@ void mCoreConfigMap(const struct mCoreConfig* config, struct mCoreOptions* opts)
 	}
 	_lookupUIntValue(config, "sampleRate", &opts->sampleRate);
 
-	_lookupBoolValue(config, "audioSync", &opts->audioSync);
-	_lookupBoolValue(config, "videoSync", &opts->videoSync);
-
-	_lookupBoolValue(config, "lockAspectRatio", &opts->lockAspectRatio);
-	_lookupBoolValue(config, "lockIntegerScaling", &opts->lockIntegerScaling);
-	_lookupBoolValue(config, "interframeBlending", &opts->interframeBlending);
-	_lookupBoolValue(config, "resampleVideo", &opts->resampleVideo);
-
-	_lookupBoolValue(config, "useBios", &opts->useBios);
-	_lookupBoolValue(config, "skipBios", &opts->skipBios);
-
-	_lookupBoolValue(config, "suspendScreensaver", &opts->suspendScreensaver);
-	_lookupBoolValue(config, "mute", &opts->mute);
-	_lookupBoolValue(config, "rewindEnable", &opts->rewindEnable);
+	int fakeBool;
+	if (_lookupIntValue(config, "useBios", &fakeBool)) {
+		opts->useBios = fakeBool;
+	}
+	if (_lookupIntValue(config, "audioSync", &fakeBool)) {
+		opts->audioSync = fakeBool;
+	}
+	if (_lookupIntValue(config, "videoSync", &fakeBool)) {
+		opts->videoSync = fakeBool;
+	}
+	if (_lookupIntValue(config, "lockAspectRatio", &fakeBool)) {
+		opts->lockAspectRatio = fakeBool;
+	}
+	if (_lookupIntValue(config, "lockIntegerScaling", &fakeBool)) {
+		opts->lockIntegerScaling = fakeBool;
+	}
+	if (_lookupIntValue(config, "interframeBlending", &fakeBool)) {
+		opts->interframeBlending = fakeBool;
+	}
+	if (_lookupIntValue(config, "resampleVideo", &fakeBool)) {
+		opts->resampleVideo = fakeBool;
+	}
+	if (_lookupIntValue(config, "suspendScreensaver", &fakeBool)) {
+		opts->suspendScreensaver = fakeBool;
+	}
+	if (_lookupIntValue(config, "mute", &fakeBool)) {
+		opts->mute = fakeBool;
+	}
+	if (_lookupIntValue(config, "skipBios", &fakeBool)) {
+		opts->skipBios = fakeBool;
+	}
+	if (_lookupIntValue(config, "rewindEnable", &fakeBool)) {
+		opts->rewindEnable = fakeBool;
+	}
 
 	_lookupIntValue(config, "fullscreen", &opts->fullscreen);
 	_lookupIntValue(config, "width", &opts->width);

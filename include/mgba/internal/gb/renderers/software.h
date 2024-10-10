@@ -60,7 +60,6 @@ struct GBVideoSoftwareRenderer {
 	uint8_t sgbPacket[128];
 	uint8_t sgbCommandHeader;
 	bool sgbBorders;
-	uint32_t sgbBorderMask[18];
 
 	uint8_t lastHighlightAmount;
 };

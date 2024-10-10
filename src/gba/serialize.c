@@ -15,7 +15,7 @@
 #include <fcntl.h>
 
 MGBA_EXPORT const uint32_t GBASavestateMagic = 0x01000000;
-MGBA_EXPORT const uint32_t GBASavestateVersion = 0x00000007;
+MGBA_EXPORT const uint32_t GBASavestateVersion = 0x00000004;
 
 mLOG_DEFINE_CATEGORY(GBA_STATE, "GBA Savestate", "gba.serialize");
 
@@ -68,7 +68,6 @@ void GBASerialize(struct GBA* gba, struct GBASerializedState* state) {
 		STORE_32(gba->irqEvent.when - mTimingCurrentTime(&gba->timing), 0, &state->nextIrq);
 	}
 	miscFlags = GBASerializedMiscFlagsSetBlocked(miscFlags, gba->cpuBlocked);
-	miscFlags = GBASerializedMiscFlagsSetKeyIRQKeys(miscFlags, gba->keysLast);
 	STORE_32(miscFlags, 0, &state->miscFlags);
 	STORE_32(gba->biosStall, 0, &state->biosStall);
 
@@ -198,7 +197,6 @@ bool GBADeserialize(struct GBA* gba, const struct GBASerializedState* state) {
 		mTimingSchedule(&gba->timing, &gba->irqEvent, when);		
 	}
 	gba->cpuBlocked = GBASerializedMiscFlagsGetBlocked(miscFlags);
-	gba->keysLast = GBASerializedMiscFlagsGetKeyIRQKeys(miscFlags);
 	LOAD_32(gba->biosStall, 0, &state->biosStall);
 
 	GBAVideoDeserialize(&gba->video, state);
@@ -211,7 +209,8 @@ bool GBADeserialize(struct GBA* gba, const struct GBASerializedState* state) {
 		GBAMatrixDeserialize(gba, state);
 	}
 
-	mTimingInterrupt(&gba->timing);
+	gba->timing.reroot = gba->timing.root;
+	gba->timing.root = NULL;
 
 	return true;
 }

@@ -18,8 +18,9 @@ mLOG_DECLARE_CATEGORY(GBA_VIDEO);
 
 enum {
 	VIDEO_HBLANK_PIXELS = 68,
-	VIDEO_HDRAW_LENGTH = 1008,
-	VIDEO_HBLANK_LENGTH = 224,
+	VIDEO_HDRAW_LENGTH = 960,
+	VIDEO_HBLANK_LENGTH = 272,
+	VIDEO_HBLANK_FLIP = 46,
 	VIDEO_HORIZONTAL_LENGTH = 1232,
 
 	VIDEO_VBLANK_PIXELS = 68,
@@ -214,7 +215,7 @@ struct GBAVideo {
 	uint16_t* vram;
 	union GBAOAM oam;
 
-	uint32_t frameCounter;
+	int32_t frameCounter;
 	int frameskip;
 	int frameskipCounter;
 };

@@ -226,10 +226,9 @@ ssize_t _vfmRead(struct VFile* vf, void* buffer, size_t size) {
 	if (size + vfm->offset >= vfm->size) {
 		size = vfm->size - vfm->offset;
 	}
-	if (size) {
-		memcpy(buffer, (void*) ((uintptr_t) vfm->mem + vfm->offset), size);
-		vfm->offset += size;
-	}
+
+	memcpy(buffer, (void*) ((uintptr_t) vfm->mem + vfm->offset), size);
+	vfm->offset += size;
 	return size;
 }
 

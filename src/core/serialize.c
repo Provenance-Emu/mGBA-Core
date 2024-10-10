@@ -8,7 +8,6 @@
 #include <mgba/core/core.h>
 #include <mgba/core/cheats.h>
 #include <mgba/core/interface.h>
-#include <mgba/core/version.h>
 #include <mgba-util/memory.h>
 #include <mgba-util/vfs.h>
 
@@ -387,15 +386,6 @@ bool mCoreSaveStateNamed(struct mCore* core, struct VFile* vf, int flags) {
 			};
 			mStateExtdataPut(&extdata, EXTDATA_META_TIME, &item);
 		}
-
-		char creator[256];
-		snprintf(creator, sizeof(creator), "%s %s", projectName, projectVersion);
-		struct mStateExtdataItem item = {
-			.size = strlen(creator) + 1,
-			.data = strdup(creator),
-			.clean = free
-		};
-		mStateExtdataPut(&extdata, EXTDATA_META_CREATOR, &item);
 	}
 
 	if (flags & SAVESTATE_SAVEDATA) {
@@ -459,9 +449,6 @@ bool mCoreSaveStateNamed(struct mCore* core, struct VFile* vf, int flags) {
 	else {
 		bool success = _savePNGState(core, vf, &extdata);
 		mStateExtdataDeinit(&extdata);
-		if (cheatVf) {
-			cheatVf->close(cheatVf);
-		}
 		return success;
 	}
 #endif

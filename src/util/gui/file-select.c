@@ -14,7 +14,7 @@
 
 #define ITERATION_SIZE 5
 #define SCANNING_THRESHOLD_1 50
-#ifdef __3DS__
+#ifdef _3DS
 // 3DS is slooooow at opening files
 #define SCANNING_THRESHOLD_2 10
 #else
@@ -94,7 +94,7 @@ static bool _refreshDirectory(struct GUIParams* params, const char* currentPath,
 		} else {
 			name = strdup(name);
 		}
-		*GUIMenuItemListAppend(currentFiles) = (struct GUIMenuItem) { .title = name, .data = GUI_V_U(de->type(de)) };
+		*GUIMenuItemListAppend(currentFiles) = (struct GUIMenuItem) { .title = name, .data = (void*) de->type(de) };
 		++items;
 	}
 	qsort(GUIMenuItemListGetPointer(currentFiles, 1), GUIMenuItemListSize(currentFiles) - 1, sizeof(struct GUIMenuItem), _strpcmp);
@@ -124,7 +124,7 @@ static bool _refreshDirectory(struct GUIParams* params, const char* currentPath,
 				params->drawEnd();
 			}
 			struct GUIMenuItem* testItem = GUIMenuItemListGetPointer(currentFiles, item);
-			if (!GUIVariantCompareUInt(testItem->data, VFS_FILE)) {
+			if (testItem->data != (void*) VFS_FILE) {
 				++item;
 				continue;
 			}
