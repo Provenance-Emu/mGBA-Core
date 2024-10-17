@@ -221,9 +221,9 @@ bool ARMDecodeThumbCombine(struct ARMInstructionInfo* info1, struct ARMInstructi
                            struct ARMInstructionInfo* out);
 uint32_t ARMResolveMemoryAccess(struct ARMInstructionInfo* info, struct ARMRegisterFile* regs, uint32_t pc);
 
-#ifdef USE_DEBUGGERS
+#ifdef ENABLE_DEBUGGERS
 struct mDebuggerSymbols;
-int ARMDisassemble(struct ARMInstructionInfo* info, struct ARMCore* core, const struct mDebuggerSymbols* symbols, uint32_t pc, char* buffer, int blen);
+int ARMDisassemble(const struct ARMInstructionInfo* info, struct ARMCore* core, const struct mDebuggerSymbols* symbols, uint32_t pc, char* buffer, int blen);
 #endif
 
 CXX_GUARD_END

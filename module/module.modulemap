@@ -24,7 +24,9 @@ module libmGBA {
     header "../include/mgba/core/version.h"
     header "../include/mgba/debugger/debugger.h"
     header "../include/mgba/feature/commandline.h"
+//    header "../include/mgba/feature/proxy-backend.h"
 //    header "../include/mgba/feature/thread-proxy.h"
+    header "../include/mgba/feature/video-backend.h"
     header "../include/mgba/feature/video-logger.h"
     header "../include/mgba/gb/core.h"
     header "../include/mgba/gb/interface.h"
@@ -34,7 +36,7 @@ module libmGBA {
     export *
 }
 
-//module libmGBA.util {
+module libmGBA.util {
 //    header "../include/mgba-util/gui/file-select.h"
 //    header "../include/mgba-util/gui/font-metrics.h"
 //    header "../include/mgba-util/gui/font.h"
@@ -44,4 +46,4 @@ module libmGBA {
 //    header "../include/mgba-util/patch/ups.h"
 //
 //    export *
-//}
+}

@@ -40,6 +40,11 @@ struct GBAVideoSoftwareBackground {
 	int32_t sy;
 	int yCache;
 	uint16_t mapCache[64];
+	uint32_t flags;
+	uint32_t objwinFlags;
+	int objwinForceEnable;
+	bool objwinOnly;
+	bool variant;
 	int32_t offsetX;
 	int32_t offsetY;
 	bool highlight;
@@ -77,7 +82,7 @@ struct Window {
 struct GBAVideoSoftwareRenderer {
 	struct GBAVideoRenderer d;
 
-	color_t* outputBuffer;
+	mColor* outputBuffer;
 	int outputBufferStride;
 
 	uint32_t* temporaryBuffer;
@@ -95,10 +100,10 @@ struct GBAVideoSoftwareRenderer {
 	unsigned target2Bd;
 	bool blendDirty;
 	enum GBAVideoBlendEffect blendEffect;
-	color_t normalPalette[512];
-	color_t variantPalette[512];
-	color_t highlightPalette[512];
-	color_t highlightVariantPalette[512];
+	mColor normalPalette[512];
+	mColor variantPalette[512];
+	mColor highlightPalette[512];
+	mColor highlightVariantPalette[512];
 
 	uint16_t blda;
 	uint16_t bldb;
@@ -113,6 +118,7 @@ struct GBAVideoSoftwareRenderer {
 		struct WindowControl control;
 		int16_t offsetX;
 		int16_t offsetY;
+		bool on;
 	} winN[2];
 
 	struct WindowControl winout;
@@ -133,10 +139,11 @@ struct GBAVideoSoftwareRenderer {
 	int16_t objOffsetY;
 
 	uint32_t scanlineDirty[5];
-	uint16_t nextIo[REG_SOUND1CNT_LO >> 1];
+	uint16_t nextIo[GBA_REG(SOUND1CNT_LO)];
 	struct ScanlineCache {
-		uint16_t io[REG_SOUND1CNT_LO >> 1];
+		uint16_t io[GBA_REG(SOUND1CNT_LO)];
 		int32_t scale[2][2];
+		bool windowOn[2];
 	} cache[GBA_VIDEO_VERTICAL_PIXELS];
 	int nextY;
 

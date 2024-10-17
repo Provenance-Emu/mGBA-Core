@@ -6,6 +6,7 @@
 #include <mgba/core/library.h>
 
 #include <mgba/core/core.h>
+#include <mgba-util/string.h>
 #include <mgba-util/vfs.h>
 
 #ifdef USE_SQLITE3
@@ -199,6 +200,10 @@ error:
 }
 
 void mLibraryDestroy(struct mLibrary* library) {
+	if (!library) {
+		return;
+	}
+
 	sqlite3_finalize(library->insertPath);
 	sqlite3_finalize(library->insertRom);
 	sqlite3_finalize(library->insertRoot);
@@ -239,9 +244,11 @@ void mLibraryLoadDirectory(struct mLibrary* library, const char* base, bool recu
 		struct VFile* vf = dir->openFile(dir, current->filename, O_RDONLY);
 		_mLibraryDeleteEntry(library, current);
 		if (!vf) {
+			mLibraryEntryFree(current);
 			continue;
 		}
 		_mLibraryAddEntry(library, current->filename, base, vf);
+		mLibraryEntryFree(current);
 	}
 	mLibraryListingDeinit(&entries);
 
@@ -285,8 +292,10 @@ bool _mLibraryAddEntry(struct mLibrary* library, const char* filename, const cha
 	core->init(core);
 	core->loadROM(core, vf);
 
-	core->getGameTitle(core, entry.internalTitle);
-	core->getGameCode(core, entry.internalCode);
+	struct mGameInfo info;
+	core->getGameInfo(core, &info);
+	snprintf(entry.internalCode, sizeof(entry.internalCode), "%s-%s", info.system, info.code);
+	strlcpy(entry.internalTitle, info.title, sizeof(entry.internalTitle));
 	core->checksum(core, &entry.crc32, mCHECKSUM_CRC32);
 	entry.platform = core->platform(core);
 	entry.title = NULL;
@@ -377,9 +386,12 @@ size_t mLibraryGetEntries(struct mLibrary* library, struct mLibraryListing* out,
 	sqlite3_reset(library->select);
 	_bindConstraints(library->select, constraints);
 
+	if (numEntries > SSIZE_MAX) {
+		numEntries = SSIZE_MAX;
+	}
 	int countIndex = sqlite3_bind_parameter_index(library->select, ":count");
 	int offsetIndex = sqlite3_bind_parameter_index(library->select, ":offset");
-	sqlite3_bind_int64(library->select, countIndex, numEntries ? numEntries : -1);
+	sqlite3_bind_int64(library->select, countIndex, numEntries ? (ssize_t) numEntries : -1);
 	sqlite3_bind_int64(library->select, offsetIndex, offset);
 
 	size_t entryIndex;

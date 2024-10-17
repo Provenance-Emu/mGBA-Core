@@ -22,13 +22,13 @@ struct GBVideoRendererSprite {
 struct GBVideoSoftwareRenderer {
 	struct GBVideoRenderer d;
 
-	color_t* outputBuffer;
+	mColor* outputBuffer;
 	int outputBufferStride;
 
 	// TODO: Implement the pixel FIFO
 	uint16_t row[GB_VIDEO_HORIZONTAL_PIXELS + 8];
 
-	color_t palette[192];
+	mColor palette[192];
 	uint8_t lookup[192];
 
 	uint32_t* temporaryBuffer;
@@ -60,6 +60,7 @@ struct GBVideoSoftwareRenderer {
 	uint8_t sgbPacket[128];
 	uint8_t sgbCommandHeader;
 	bool sgbBorders;
+	uint32_t sgbBorderMask[18];
 
 	uint8_t lastHighlightAmount;
 };

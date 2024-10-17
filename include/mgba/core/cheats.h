@@ -31,6 +31,7 @@ enum mCheatType {
 	CHEAT_IF_LAND,
 	CHEAT_IF_NAND,
 	CHEAT_IF_BUTTON,
+	CHEAT_NEVER,
 };
 
 struct mCheat {
@@ -117,7 +118,7 @@ bool mCheatSaveFile(struct mCheatDevice*, struct VFile*);
 bool mCheatParseLibretroFile(struct mCheatDevice*, struct VFile*);
 bool mCheatParseEZFChtFile(struct mCheatDevice*, struct VFile*);
 
-#if !defined(MINIMAL_CORE) || MINIMAL_CORE < 2
+#ifdef ENABLE_VFS
 void mCheatAutosave(struct mCheatDevice*);
 #endif
 
